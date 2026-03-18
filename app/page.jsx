@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import jsPDF from "jspdf";
 
 const supabase = createClient(
   "https://sdlytrkrhgltitcjctsm.supabase.co",
@@ -9,6 +10,33 @@ const supabase = createClient(
 );
 
 export default function Home() {
+  export default function Home() {
+
+  const generaPDF = (r, materiali) => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("CLAUDIO CARLINI", 70, 20);
+
+    doc.setFontSize(12);
+    doc.text(`Cliente: ${r.cliente}`, 20, 40);
+    doc.text(`Indirizzo: ${r.indirizzo}`, 20, 50);
+    doc.text(`Tecnico: ${r.tecnico}`, 20, 60);
+
+    doc.text("Descrizione:", 20, 75);
+    doc.text(r.descrizione || "-", 20, 85);
+
+    doc.text("Materiali:", 20, 105);
+
+    let y = 115;
+    materiali.forEach(m => {
+      doc.text(`- ${m.nome} (${m.colore}) x${m.quantitaUsata}`, 20, y);
+      y += 10;
+    });
+
+    doc.save(`rapportino_${r.cliente}.pdf`);
+  };
+
   const [articoli, setArticoli] = useState([]);
   const [materiali, setMateriali] = useState([]);
 
@@ -94,7 +122,10 @@ export default function Home() {
         <p key={i}>{m.nome} ({m.colore}) x{m.quantitaUsata}</p>
       ))}
 
-      <button onClick={salvaRapportino}>Salva Rapportino</button>
+     <button onClick={() => {
+  salvaRapportino();
+  generaPDF(rapporto, materiali);
+}}>
     </div>
   );
 }
