@@ -41,15 +41,23 @@ export default function Home() {
   };
 
 const generaPDF = () => {
-  try {
-    const doc = new jsPDF();
+  const doc = new jsPDF();
 
-    doc.text("PDF OK", 20, 20);
+  // LOGO (placeholder stabile)
+  const logo = "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg";
 
-    doc.save("test.pdf");
-  } catch (e) {
-    alert("Errore PDF: " + e.message);
-  }
+  doc.addImage(logo, "PNG", 80, 10, 50, 20);
+
+  doc.setFontSize(12);
+
+  doc.text("Cliente: " + (rapporto.cliente || ""), 20, 50);
+  doc.text("Indirizzo: " + (rapporto.indirizzo || ""), 20, 60);
+  doc.text("Tecnico: " + (rapporto.tecnico || ""), 20, 70);
+
+  doc.text("Descrizione:", 20, 90);
+  doc.text(rapporto.descrizione || "-", 20, 100);
+
+  doc.save("rapportino.pdf");
 };
   
   return (
