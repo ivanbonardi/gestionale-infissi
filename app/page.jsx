@@ -122,10 +122,13 @@ export default function Home() {
         <p key={i}>{m.nome} ({m.colore}) x{m.quantitaUsata}</p>
       ))}
 
-     <button onClick={() => {
-  salvaRapportino();
-  generaPDF(rapporto, materiali);
-}}>
+<button onClick={salvaRapportino}>
+  Salva Rapportino
+</button>
+
+<button onClick={() => generaPDF(rapporto, materiali)}>
+  Scarica PDF
+</button>
     </div>
   );
 }
