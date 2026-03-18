@@ -41,11 +41,15 @@ export default function Home() {
   };
 
 const generaPDF = () => {
-  const doc = new jsPDF();
+  try {
+    const doc = new jsPDF();
 
-  doc.text("PDF OK", 20, 20);
+    doc.text("PDF OK", 20, 20);
 
-  doc.save("test.pdf");
+    doc.save("test.pdf");
+  } catch (e) {
+    alert("Errore PDF: " + e.message);
+  }
 };
   
   return (
