@@ -43,19 +43,9 @@ export default function Home() {
 const generaPDF = () => {
   const doc = new jsPDF();
 
-  doc.setFontSize(20);
-  doc.text("CLAUDIO CARLINI", 20, 20);
+  doc.text("PDF OK", 20, 20);
 
-  doc.setFontSize(12);
-
-  doc.text("Cliente: " + (rapporto.cliente || ""), 20, 40);
-  doc.text("Indirizzo: " + (rapporto.indirizzo || ""), 20, 50);
-  doc.text("Tecnico: " + (rapporto.tecnico || ""), 20, 60);
-
-  doc.text("Descrizione:", 20, 80);
-  doc.text(rapporto.descrizione || "-", 20, 90);
-
-  doc.save("rapportino.pdf");
+  doc.save("test.pdf");
 };
   
   return (
