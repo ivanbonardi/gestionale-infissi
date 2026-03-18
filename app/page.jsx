@@ -10,14 +10,7 @@ const supabase = createClient(
 
 export default function Home() {
   const [articoli, setArticoli] = useState([]);
-  const [rapportini, setRapportini] = useState([]);
-
-  const [articolo, setArticolo] = useState({
-    nome: "",
-    categoria: "",
-    colore: "",
-    quantita: 0,
-  });
+  const [materiali, setMateriali] = useState([]);
 
   const [rapporto, setRapporto] = useState({
     cliente: "",
@@ -26,9 +19,11 @@ export default function Home() {
     descrizione: "",
   });
 
+  const [materialeSelezionato, setMaterialeSelezionato] = useState("");
+  const [quantita, setQuantita] = useState(1);
+
   useEffect(() => {
     caricaArticoli();
-    caricaRapportini();
   }, []);
 
   const caricaArticoli = async () => {
@@ -36,50 +31,70 @@ export default function Home() {
     setArticoli(data || []);
   };
 
-  const caricaRapportini = async () => {
-    const { data } = await supabase.from("rapportini").select("*");
-    setRapportini(data || []);
-  };
+  const aggiungiMateriale = () => {
+    const articolo = articoli.find(a => a.id === materialeSelezionato);
+    if (!articolo) return;
 
-  const aggiungiArticolo = async () => {
-    await supabase.from("articoli").insert([articolo]);
-    setArticolo({ nome: "", categoria: "", colore: "", quantita: 0 });
-    caricaArticoli();
+    setMateriali([
+      ...materiali,
+      { ...articolo, quantitaUsata: quantita }
+    ]);
   };
 
   const salvaRapportino = async () => {
-    await supabase.from("rapportini").insert([rapporto]);
-    setRapporto({ cliente: "", indirizzo: "", tecnico: "", descrizione: "" });
-    caricaRapportini();
+    const { data } = await supabase
+      .from("rapportini")
+      .insert([rapporto])
+      .select();
+
+    const id = data[0].id;
+
+    for (let m of materiali) {
+      await supabase.from("materiali_rapportino").insert([{
+        rapportino_id: id,
+        nome: m.nome,
+        colore: m.colore,
+        quantita: m.quantitaUsata
+      }]);
+
+      await supabase.from("articoli")
+        .update({ quantita: m.quantita - m.quantitaUsata })
+        .eq("id", m.id);
+    }
+
+    alert("Rapportino salvato!");
   };
 
   return (
     <div style={{ padding: 20 }}>
       <h1>Gestionale Infissi</h1>
 
-      <h2>Magazzino</h2>
-      <input placeholder="Nome" onChange={e => setArticolo({ ...articolo, nome: e.target.value })} />
-      <input placeholder="Categoria" onChange={e => setArticolo({ ...articolo, categoria: e.target.value })} />
-      <input placeholder="Colore" onChange={e => setArticolo({ ...articolo, colore: e.target.value })} />
-      <input type="number" placeholder="Quantità" onChange={e => setArticolo({ ...articolo, quantita: Number(e.target.value) })} />
-      <button onClick={aggiungiArticolo}>Salva Articolo</button>
-
       <h2>Rapportino</h2>
       <input placeholder="Cliente" onChange={e => setRapporto({ ...rapporto, cliente: e.target.value })} />
       <input placeholder="Indirizzo" onChange={e => setRapporto({ ...rapporto, indirizzo: e.target.value })} />
       <input placeholder="Tecnico" onChange={e => setRapporto({ ...rapporto, tecnico: e.target.value })} />
       <textarea placeholder="Descrizione" onChange={e => setRapporto({ ...rapporto, descrizione: e.target.value })} />
+
+      <h3>Materiali</h3>
+      <select onChange={e => setMaterialeSelezionato(e.target.value)}>
+        <option>Seleziona materiale</option>
+        {articoli.map(a => (
+          <option key={a.id} value={a.id}>
+            {a.nome} - {a.colore} ({a.quantita})
+          </option>
+        ))}
+      </select>
+
+      <input type="number" value={quantita} onChange={e => setQuantita(Number(e.target.value))} />
+
+      <button onClick={aggiungiMateriale}>Aggiungi materiale</button>
+
+      <h4>Materiali usati</h4>
+      {materiali.map((m, i) => (
+        <p key={i}>{m.nome} ({m.colore}) x{m.quantitaUsata}</p>
+      ))}
+
       <button onClick={salvaRapportino}>Salva Rapportino</button>
-
-      <h3>Articoli</h3>
-      {articoli.map((a, i) => (
-        <p key={i}>{a.nome} - {a.colore} ({a.quantita})</p>
-      ))}
-
-      <h3>Rapportini</h3>
-      {rapportini.map((r, i) => (
-        <p key={i}>{r.cliente}</p>
-      ))}
     </div>
   );
 }
