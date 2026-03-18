@@ -43,13 +43,24 @@ export default function Home() {
 const generaPDF = () => {
   const doc = new jsPDF();
 
-  doc.setFontSize(18);
-  doc.text("TEST PDF NUOVO", 20, 20);
+  // TITOLO (centrato)
+  doc.setFontSize(20);
+  doc.text("CLAUDIO CARLINI", 105, 20, null, null, "center");
 
-  doc.text("Cliente: " + (rapporto.cliente || ""), 20, 40);
-  doc.text("Indirizzo: " + (rapporto.indirizzo || ""), 20, 50);
-  doc.text("Tecnico: " + (rapporto.tecnico || ""), 20, 60);
-  doc.text("Descrizione: " + (rapporto.descrizione || ""), 20, 70);
+  doc.setFontSize(14);
+  doc.text("Fabbro - Serramentista", 105, 30, null, null, "center");
+
+  // LINEA
+  doc.line(20, 35, 190, 35);
+
+  doc.setFontSize(12);
+
+  doc.text("Cliente: " + (rapporto.cliente || ""), 20, 50);
+  doc.text("Indirizzo: " + (rapporto.indirizzo || ""), 20, 60);
+  doc.text("Tecnico: " + (rapporto.tecnico || ""), 20, 70);
+
+  doc.text("Descrizione lavoro:", 20, 90);
+  doc.text(rapporto.descrizione || "-", 20, 100);
 
   doc.save("rapportino.pdf");
 };
