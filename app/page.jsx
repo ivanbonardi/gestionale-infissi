@@ -1,42 +1,85 @@
 "use client";
 import jsPDF from "jspdf";
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// 🔴 INSERISCI QUI I TUOI DATI
+const supabase = createClient(
+  "https://fenymltejrxvbtfmahsb.supabase.co",
+  "sb_publishable_HGSNVbXgM0fZ-jJUYHLfig_Z_9MyeKh"
+);
 
 export default function Home() {
-  const [nome, setNome] = useState("");
   const [cliente, setCliente] = useState("");
   const [indirizzo, setIndirizzo] = useState("");
   const [lavoro, setLavoro] = useState("");
   const [ore, setOre] = useState("");
   const [operai, setOperai] = useState("");
+  const [articolo, setArticolo] = useState("");
+  const [articoli, setArticoli] = useState([]);
+  const [storico, setStorico] = useState([]);
 
-  const [articoli, setArticoli] = useState(() => {
-    if (typeof window !== "undefined") {
-      return JSON.parse(localStorage.getItem("articoli")) || [];
-    }
-    return [];
-  });
+  const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
 
+  // 📥 CARICA STORICO
   useEffect(() => {
-    localStorage.setItem("articoli", JSON.stringify(articoli));
-  }, [articoli]);
+    caricaStorico();
+  }, []);
 
+  const caricaStorico = async () => {
+    const { data } = await supabase
+      .from("rapportini")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    setStorico(data || []);
+  };
+
+  // ➕ AGGIUNGI MATERIALE
   const aggiungi = () => {
-    if (!nome) return;
-    setArticoli([...articoli, nome]);
-    setNome("");
+    if (!articolo) return;
+    setArticoli([...articoli, articolo]);
+    setArticolo("");
   };
 
   const elimina = (index) => {
-    const nuovi = articoli.filter((_, i) => i !== index);
-    setArticoli(nuovi);
+    setArticoli(articoli.filter((_, i) => i !== index));
   };
 
+  // 💾 SALVA SU SUPABASE
+  const salva = async () => {
+    const { error } = await supabase.from("rapportini").insert([
+      {
+        cliente,
+        indirizzo,
+        lavoro,
+        ore,
+        operai,
+        ore_uomo: oreUomo,
+        materiali: articoli,
+      },
+    ]);
+
+    if (error) {
+      alert("Errore salvataggio");
+    } else {
+      alert("Salvato!");
+      setCliente("");
+      setIndirizzo("");
+      setLavoro("");
+      setOre("");
+      setOperai("");
+      setArticoli([]);
+      caricaStorico();
+    }
+  };
+
+  // 📄 PDF
   const generaPDF = () => {
     const doc = new jsPDF();
 
     doc.setFontSize(18);
-    doc.text("RAPPORTINO INTERVENTO", 105, 20, null, null, "center");
+    doc.text("GESTIONE RAPPORTINI", 105, 20, null, null, "center");
 
     const oggi = new Date().toLocaleDateString();
 
@@ -47,18 +90,19 @@ export default function Home() {
 
     doc.line(10, 55, 200, 55);
 
-    doc.text("Lavoro eseguito:", 10, 65);
+    doc.text("Lavoro:", 10, 65);
     doc.text(lavoro || "-", 10, 75);
 
-    doc.text(`Ore lavorate: ${ore}`, 10, 90);
+    doc.text(`Ore: ${ore}`, 10, 90);
     doc.text(`Operai: ${operai}`, 10, 100);
+    doc.text(`Ore uomo: ${oreUomo}`, 10, 110);
 
-    doc.line(10, 105, 200, 105);
+    doc.line(10, 115, 200, 115);
 
-    doc.text("Materiali utilizzati:", 10, 115);
+    doc.text("Materiali:", 10, 125);
 
-    let y = 125;
-    articoli.forEach((item, index) => {
+    let y = 135;
+    articoli.forEach((item) => {
       doc.text(`- ${item}`, 10, y);
       y += 10;
     });
@@ -67,155 +111,43 @@ export default function Home() {
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Gestionale Interventi</h1>
+    <div style={{ padding: 20, maxWidth: 400, margin: "auto" }}>
+      <h2>Gestione Rapportini</h2>
 
-      {/* CLIENTE */}
-      <div style={styles.card}>
-        <input
-          style={styles.input}
-          placeholder="Nome cliente"
-          value={cliente}
-          onChange={(e) => setCliente(e.target.value)}
-        />
+      <input placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
+      <input placeholder="Indirizzo" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
+      <input placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
 
-        <input
-          style={styles.input}
-          placeholder="Indirizzo"
-          value={indirizzo}
-          onChange={(e) => setIndirizzo(e.target.value)}
-        />
-      </div>
+      <input placeholder="Ore" value={ore} onChange={(e)=>setOre(e.target.value)} />
+      <input placeholder="Operai" value={operai} onChange={(e)=>setOperai(e.target.value)} />
 
-      {/* LAVORO */}
-      <div style={styles.card}>
-        <input
-          style={styles.input}
-          placeholder="Descrizione lavoro"
-          value={lavoro}
-          onChange={(e) => setLavoro(e.target.value)}
-        />
-      </div>
+      <p><b>Ore uomo: {oreUomo}</b></p>
 
-      {/* ORE + OPERAI */}
-      <div style={styles.card}>
-        <input
-          style={styles.input}
-          placeholder="Ore lavorate"
-          value={ore}
-          onChange={(e) => setOre(e.target.value)}
-        />
+      <input placeholder="Materiale" value={articolo} onChange={(e)=>setArticolo(e.target.value)} />
+      <button onClick={aggiungi}>Aggiungi materiale</button>
 
-        <input
-          style={styles.input}
-          placeholder="Numero dipendenti"
-          value={operai}
-          onChange={(e) => setOperai(e.target.value)}
-        />
-      </div>
+      {articoli.map((a,i)=>(
+        <div key={i}>
+          {a} <button onClick={()=>elimina(i)}>❌</button>
+        </div>
+      ))}
 
-      {/* AGGIUNTA ARTICOLI */}
-      <div style={styles.card}>
-        <input
-          style={styles.input}
-          placeholder="Nome materiale"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-        />
+      <br/>
 
-        <button style={styles.button} onClick={aggiungi}>
-          Aggiungi
-        </button>
-      </div>
+      <button onClick={salva}>💾 Salva</button>
+      <button onClick={generaPDF}>📄 PDF</button>
 
-      {/* LISTA */}
-      <div style={styles.lista}>
-        <button style={styles.pdfButton} onClick={generaPDF}>
-          Scarica PDF
-        </button>
+      <hr/>
 
-        {articoli.map((item, index) => (
-          <div key={index} style={styles.item}>
-            <span>{item}</span>
-            <button
-              style={styles.delete}
-              onClick={() => elimina(index)}
-            >
-              ❌
-            </button>
-          </div>
-        ))}
-      </div>
+      <h3>Storico interventi</h3>
+
+      {storico.map((r,i)=>(
+        <div key={i} style={{border:"1px solid #ccc", margin:10, padding:10}}>
+          <b>{r.cliente}</b><br/>
+          {r.lavoro}<br/>
+          Ore uomo: {r.ore_uomo}
+        </div>
+      ))}
     </div>
   );
 }
-
-// 🎨 STILI
-const styles = {
-  container: {
-    minHeight: "100vh",
-    backgroundColor: "#f5f7fa",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    paddingTop: "60px",
-  },
-  title: {
-    fontSize: "32px",
-    fontWeight: "bold",
-    marginBottom: "30px",
-  },
-  card: {
-    backgroundColor: "white",
-    padding: "15px",
-    borderRadius: "12px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-    display: "flex",
-    gap: "10px",
-    marginBottom: "15px",
-  },
-  input: {
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    fontSize: "14px",
-  },
-  button: {
-    padding: "10px 20px",
-    backgroundColor: "#0070f3",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-  lista: {
-    marginTop: "20px",
-    width: "300px",
-  },
-  item: {
-    backgroundColor: "white",
-    padding: "10px",
-    marginBottom: "10px",
-    borderRadius: "8px",
-    display: "flex",
-    justifyContent: "space-between",
-    boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
-  },
-  delete: {
-    backgroundColor: "red",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-  },
-  pdfButton: {
-    marginBottom: "15px",
-    padding: "10px",
-    backgroundColor: "green",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    width: "100%",
-  },
-};
