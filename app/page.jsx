@@ -47,34 +47,36 @@ export default function Home() {
     setArticoli(articoli.filter((_, index) => index !== i));
   };
 
-  // 🔥 FIX DEFINITIVO CRASH
+  // 🔥 FIX CARICAMENTO MATERIALI
+  const caricaIntervento = (r) => {
+    setCliente(r.cliente || "");
+    setIndirizzo(r.indirizzo || "");
+    setLavoro(r.lavoro || "");
+    setOre(r.ore || "");
+    setOperai(r.operai || "");
 
-
-  const salva = async () => {
-    let query;
-    const caricaIntervento = (r) => {
-  setCliente(r.cliente || "");
-  setIndirizzo(r.indirizzo || "");
-  setLavoro(r.lavoro || "");
-  setOre(r.ore || "");
-  setOperai(r.operai || "");
-
-  // 🔥 FIX COMPLETO MATERIALI
-  if (Array.isArray(r.materiali)) {
-    setArticoli(r.materiali);
-  } else if (typeof r.materiali === "string") {
-    try {
-      setArticoli(JSON.parse(r.materiali));
-    } catch {
+    if (Array.isArray(r.materiali)) {
+      setArticoli(r.materiali);
+    } else if (typeof r.materiali === "string") {
+      try {
+        setArticoli(JSON.parse(r.materiali));
+      } catch {
+        setArticoli([]);
+      }
+    } else {
       setArticoli([]);
     }
-  } else {
-    setArticoli([]);
-  }
 
-  setIdModifica(r.id);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+    setIdModifica(r.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // 🔥 FIX SALVATAGGIO MATERIALI
+  const salva = async () => {
+    const materialiPuliti = articoli && articoli.length ? articoli : [];
+
+    let query;
+
     if (idModifica !== null) {
       query = supabase
         .from("rapportini")
@@ -85,7 +87,7 @@ export default function Home() {
           ore,
           operai,
           ore_uomo: oreUomo,
-          materiali: articoli,
+          materiali: materialiPuliti,
         })
         .eq("id", idModifica);
     } else {
@@ -97,7 +99,7 @@ export default function Home() {
           ore,
           operai,
           ore_uomo: oreUomo,
-          materiali: articoli,
+          materiali: materialiPuliti,
           archiviato: false,
         },
       ]);
