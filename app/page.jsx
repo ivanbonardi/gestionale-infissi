@@ -217,17 +217,123 @@ export default function Home() {
 }
 
 const styles = {
-  container: { background:"#f5f7fa", minHeight:"100vh", padding:20 },
-  title: { fontSize:28, marginBottom:20 },
-  card: { background:"white", padding:15, borderRadius:12, marginBottom:15 },
-  input: { width:"100%", padding:10, marginBottom:10 },
-  highlight: { fontWeight:"bold" },
-  smallBtn: { marginBottom:10 },
-  item: { display:"flex", justifyContent:"space-between" },
-  actions: { display:"flex", gap:10 },
-  save: { flex:1, background:"#0070f3", color:"white" },
-  pdf: { flex:1, background:"green", color:"white" },
-  toggle: { marginBottom:10 },
-  edit: { flex:1, background:"orange" },
-  archive: { flex:1, background:"gray" },
+  container: {
+    background: "#f2f2f7",
+    minHeight: "100vh",
+    padding: 15,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 15,
+  },
+
+  card: {
+    background: "#ffffff",
+    padding: 15,
+    borderRadius: 16,
+    marginBottom: 15,
+    width: "100%",
+    maxWidth: 420,
+    boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+  },
+
+  input: {
+    width: "100%",
+    padding: 12,
+    marginBottom: 10,
+    borderRadius: 10,
+    border: "1px solid #e5e5ea",
+    fontSize: 16,
+    outline: "none",
+    background: "#fafafa",
+  },
+
+  highlight: {
+    fontWeight: "600",
+    marginBottom: 10,
+    color: "#333",
+  },
+
+  smallBtn: {
+    width: "100%",
+    padding: 10,
+    borderRadius: 10,
+    border: "none",
+    background: "#e5e5ea",
+    fontSize: 14,
+    marginBottom: 10,
+  },
+
+  item: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 10,
+    background: "#f9f9f9",
+    marginBottom: 5,
+    fontSize: 14,
+  },
+
+  actions: {
+    display: "flex",
+    gap: 10,
+    marginTop: 10,
+  },
+
+  save: {
+    flex: 1,
+    background: "#007aff",
+    color: "white",
+    border: "none",
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  pdf: {
+    flex: 1,
+    background: "#34c759",
+    color: "white",
+    border: "none",
+    padding: 12,
+    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  toggle: {
+    width: "100%",
+    maxWidth: 420,
+    padding: 10,
+    borderRadius: 12,
+    border: "none",
+    background: "#e5e5ea",
+    marginBottom: 10,
+    fontSize: 14,
+  },
+
+  edit: {
+    flex: 1,
+    background: "#ff9500",
+    border: "none",
+    padding: 10,
+    borderRadius: 10,
+    color: "white",
+  },
+
+  archive: {
+    flex: 1,
+    background: "#8e8e93",
+    border: "none",
+    padding: 10,
+    borderRadius: 10,
+    color: "white",
+  },
 };
