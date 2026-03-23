@@ -37,7 +37,6 @@ export default function Home() {
     setStorico(data || []);
   };
 
-  // ✅ AGGIUNGI MATERIALE
   const aggiungiMateriale = () => {
     if (!articolo) return;
     setArticoli([...articoli, articolo]);
@@ -48,23 +47,24 @@ export default function Home() {
     setArticoli(articoli.filter((_, index) => index !== i));
   };
 
-  // ✅ CARICA INTERVENTO (FIX COMPLETO)
+  // 🔥 FIX DEFINITIVO CRASH
   const caricaIntervento = (r) => {
-    console.log("MODIFICO ID:", r.id);
-
     setCliente(r.cliente || "");
     setIndirizzo(r.indirizzo || "");
     setLavoro(r.lavoro || "");
     setOre(r.ore || "");
     setOperai(r.operai || "");
-    setArticoli(r.materiali || []);
 
-    setIdModifica(r.id); // 🔴 FONDAMENTALE
+    if (Array.isArray(r.materiali)) {
+      setArticoli(r.materiali);
+    } else {
+      setArticoli([]);
+    }
 
+    setIdModifica(r.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ✅ SALVA / MODIFICA (FIX DEFINITIVO)
   const salva = async () => {
     let query;
 
@@ -115,7 +115,6 @@ export default function Home() {
     }
   };
 
-  // ✅ ARCHIVIA
   const archivia = async (id) => {
     await supabase
       .from("rapportini")
@@ -125,7 +124,6 @@ export default function Home() {
     caricaStorico();
   };
 
-  // ✅ PDF
   const generaPDF = () => {
     const doc = new jsPDF();
 
@@ -136,7 +134,7 @@ export default function Home() {
     doc.text(`Ore uomo: ${oreUomo}`, 20, 60);
 
     let y = 70;
-    articoli.forEach((a) => {
+    (articoli || []).forEach((a) => {
       doc.text(`- ${a}`, 20, y);
       y += 10;
     });
@@ -148,7 +146,6 @@ export default function Home() {
     <div style={styles.container}>
       <h1 style={styles.title}>Gestione Rapportini</h1>
 
-      {/* 🔴 INDICATORE MODIFICA */}
       {idModifica !== null && (
         <p style={{ color: "orange" }}>✏️ Modalità modifica</p>
       )}
@@ -171,7 +168,7 @@ export default function Home() {
           + Aggiungi materiale
         </button>
 
-        {articoli.map((a,i)=>(
+        {(articoli || []).map((a,i)=>(
           <div key={i} style={styles.item}>
             {a}
             <button onClick={()=>eliminaMateriale(i)}>❌</button>
@@ -190,7 +187,7 @@ export default function Home() {
 
       {storico
         .filter((r) => mostraArchivio ? r.archiviato : !r.archiviato)
-        .map((r,i)=>(
+        .map((r)=>(
           <div key={r.id} style={styles.card}>
             <b>{r.cliente}</b>
             <p>{r.indirizzo}</p>
