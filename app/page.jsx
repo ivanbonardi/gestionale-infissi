@@ -1,9 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [nome, setNome] = useState("");
-  const [articoli, setArticoli] = useState([]);
+const [articoli, setArticoli] = useState(() => {
+  if (typeof window !== "undefined") {
+    return JSON.parse(localStorage.getItem("articoli")) || [];
+  }
+  return [];
+});
+  useEffect(() => {
+  localStorage.setItem("articoli", JSON.stringify(articoli));
+}, [articoli]);
 
   const aggiungi = () => {
     if (!nome) return;
