@@ -36,7 +36,6 @@ export default function Home() {
     setStorico(data || []);
   };
 
-  // 🔹 MATERIALI
   const aggiungiMateriale = () => {
     if (!articolo) return;
     setArticoli([...articoli, articolo]);
@@ -47,7 +46,6 @@ export default function Home() {
     setArticoli(articoli.filter((_, index) => index !== i));
   };
 
-  // 🔹 CARICA INTERVENTO
   const caricaIntervento = (r) => {
     setCliente(r.cliente || "");
     setLavoro(r.lavoro || "");
@@ -57,7 +55,6 @@ export default function Home() {
     setIdModifica(r.id);
   };
 
-  // 🔹 SALVA / MODIFICA
   const salva = async () => {
     let query;
 
@@ -89,23 +86,19 @@ export default function Home() {
 
     const { error } = await query;
 
-    if (error) {
-      alert(error.message);
-    } else {
+    if (error) alert(error.message);
+    else {
       alert("Salvato!");
-
       setCliente("");
       setLavoro("");
       setOre("");
       setOperai("");
       setArticoli([]);
       setIdModifica(null);
-
       caricaStorico();
     }
   };
 
-  // 🔹 ARCHIVIA
   const archivia = async (id) => {
     await supabase
       .from("rapportini")
@@ -115,10 +108,8 @@ export default function Home() {
     caricaStorico();
   };
 
-  // 🔹 PDF
   const generaPDF = () => {
     const doc = new jsPDF();
-
     doc.text("Rapportino lavoro", 20, 20);
     doc.text(`Cliente: ${cliente}`, 20, 30);
     doc.text(`Lavoro: ${lavoro}`, 20, 40);
@@ -134,59 +125,148 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Gestione Rapportini</h2>
+    <div style={styles.container}>
+      <h1 style={styles.title}>Gestione Rapportini</h1>
 
-      <input placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
-      <input placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
-      <input placeholder="Ore" value={ore} onChange={(e)=>setOre(e.target.value)} />
-      <input placeholder="Operai" value={operai} onChange={(e)=>setOperai(e.target.value)} />
+      <div style={styles.card}>
+        <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
+        <input style={styles.input} placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
 
-      <p><b>Ore uomo: {oreUomo}</b></p>
-
-      {/* 🔹 MATERIALI */}
-      <input
-        placeholder="Materiale"
-        value={articolo}
-        onChange={(e)=>setArticolo(e.target.value)}
-      />
-
-      <button onClick={aggiungiMateriale}>Aggiungi materiale</button>
-
-      {articoli.map((a,i)=>(
-        <div key={i}>
-          {a} <button onClick={()=>eliminaMateriale(i)}>❌</button>
+        <div style={{display:"flex", gap:10}}>
+          <input style={styles.input} placeholder="Ore" value={ore} onChange={(e)=>setOre(e.target.value)} />
+          <input style={styles.input} placeholder="Operai" value={operai} onChange={(e)=>setOperai(e.target.value)} />
         </div>
-      ))}
 
-      <br/>
+        <p style={styles.highlight}>Ore uomo: {oreUomo}</p>
 
-      <button onClick={salva}>💾 Salva</button>
-      <button onClick={generaPDF}>📄 PDF</button>
+        <input style={styles.input} placeholder="Materiale" value={articolo} onChange={(e)=>setArticolo(e.target.value)} />
 
-      <hr/>
+        <button style={styles.smallBtn} onClick={aggiungiMateriale}>
+          + Aggiungi materiale
+        </button>
 
-      <button onClick={() => setMostraArchivio(!mostraArchivio)}>
+        {articoli.map((a,i)=>(
+          <div key={i} style={styles.item}>
+            {a}
+            <button onClick={()=>eliminaMateriale(i)}>❌</button>
+          </div>
+        ))}
+
+        <div style={styles.actions}>
+          <button style={styles.save} onClick={salva}>💾 Salva</button>
+          <button style={styles.pdf} onClick={generaPDF}>📄 PDF</button>
+        </div>
+      </div>
+
+      <button style={styles.toggle} onClick={() => setMostraArchivio(!mostraArchivio)}>
         {mostraArchivio ? "Mostra attivi" : "Mostra archivio"}
       </button>
 
       {storico
         .filter((r) => mostraArchivio ? r.archiviato : !r.archiviato)
         .map((r,i)=>(
-          <div key={i} style={{border:"1px solid #ccc", margin:10, padding:10}}>
-            <b>{r.cliente}</b><br/>
-            {r.lavoro}<br/>
-            Ore uomo: {r.ore_uomo}
+          <div key={i} style={styles.card}>
+            <b>{r.cliente}</b>
+            <p>{r.lavoro}</p>
+            <p>Ore uomo: {r.ore_uomo}</p>
 
-            <br/>
+            <div style={styles.actions}>
+              <button style={styles.edit} onClick={()=>caricaIntervento(r)}>✏️</button>
 
-            <button onClick={()=>caricaIntervento(r)}>✏️ Apri</button>
-
-            {!r.archiviato && (
-              <button onClick={()=>archivia(r.id)}>📦 Archivia</button>
-            )}
+              {!r.archiviato && (
+                <button style={styles.archive} onClick={()=>archivia(r.id)}>📦</button>
+              )}
+            </div>
           </div>
       ))}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    background: "#f5f7fa",
+    minHeight: "100vh",
+    padding: 20,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 28,
+    marginBottom: 20,
+  },
+  card: {
+    background: "white",
+    padding: 15,
+    borderRadius: 12,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+    width: "100%",
+    maxWidth: 400,
+    marginBottom: 15,
+  },
+  input: {
+    width: "100%",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 8,
+    border: "1px solid #ddd",
+  },
+  highlight: {
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  smallBtn: {
+    background: "#eee",
+    padding: 8,
+    borderRadius: 8,
+    border: "none",
+    marginBottom: 10,
+  },
+  item: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
+  actions: {
+    display: "flex",
+    gap: 10,
+    marginTop: 10,
+  },
+  save: {
+    flex: 1,
+    background: "#0070f3",
+    color: "white",
+    border: "none",
+    padding: 10,
+    borderRadius: 8,
+  },
+  pdf: {
+    flex: 1,
+    background: "green",
+    color: "white",
+    border: "none",
+    padding: 10,
+    borderRadius: 8,
+  },
+  toggle: {
+    margin: 10,
+    padding: 10,
+    borderRadius: 8,
+    border: "none",
+  },
+  edit: {
+    flex: 1,
+    background: "#ffa500",
+    border: "none",
+    padding: 10,
+    borderRadius: 8,
+  },
+  archive: {
+    flex: 1,
+    background: "#999",
+    border: "none",
+    padding: 10,
+    borderRadius: 8,
+  },
+};
