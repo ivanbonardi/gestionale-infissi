@@ -37,6 +37,7 @@ export default function Home() {
     setStorico(data || []);
   };
 
+  // ✅ AGGIUNGI MATERIALE
   const aggiungiMateriale = () => {
     if (!articolo) return;
     setArticoli([...articoli, articolo]);
@@ -47,20 +48,27 @@ export default function Home() {
     setArticoli(articoli.filter((_, index) => index !== i));
   };
 
+  // ✅ CARICA INTERVENTO (FIX COMPLETO)
   const caricaIntervento = (r) => {
+    console.log("MODIFICO ID:", r.id);
+
     setCliente(r.cliente || "");
     setIndirizzo(r.indirizzo || "");
     setLavoro(r.lavoro || "");
     setOre(r.ore || "");
     setOperai(r.operai || "");
     setArticoli(r.materiali || []);
-    setIdModifica(r.id);
+
+    setIdModifica(r.id); // 🔴 FONDAMENTALE
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // ✅ SALVA / MODIFICA (FIX DEFINITIVO)
   const salva = async () => {
     let query;
 
-    if (idModifica) {
+    if (idModifica !== null) {
       query = supabase
         .from("rapportini")
         .update({
@@ -93,7 +101,7 @@ export default function Home() {
     if (error) {
       alert(error.message);
     } else {
-      alert("Salvato!");
+      alert(idModifica ? "Modificato!" : "Salvato!");
 
       setCliente("");
       setIndirizzo("");
@@ -107,6 +115,7 @@ export default function Home() {
     }
   };
 
+  // ✅ ARCHIVIA
   const archivia = async (id) => {
     await supabase
       .from("rapportini")
@@ -116,6 +125,7 @@ export default function Home() {
     caricaStorico();
   };
 
+  // ✅ PDF
   const generaPDF = () => {
     const doc = new jsPDF();
 
@@ -138,11 +148,14 @@ export default function Home() {
     <div style={styles.container}>
       <h1 style={styles.title}>Gestione Rapportini</h1>
 
+      {/* 🔴 INDICATORE MODIFICA */}
+      {idModifica !== null && (
+        <p style={{ color: "orange" }}>✏️ Modalità modifica</p>
+      )}
+
       <div style={styles.card}>
         <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
-        
         <input style={styles.input} placeholder="Indirizzo cliente" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
-
         <input style={styles.input} placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
 
         <div style={{display:"flex", gap:10}}>
@@ -178,7 +191,7 @@ export default function Home() {
       {storico
         .filter((r) => mostraArchivio ? r.archiviato : !r.archiviato)
         .map((r,i)=>(
-          <div key={i} style={styles.card}>
+          <div key={r.id} style={styles.card}>
             <b>{r.cliente}</b>
             <p>{r.indirizzo}</p>
             <p>{r.lavoro}</p>
@@ -198,89 +211,17 @@ export default function Home() {
 }
 
 const styles = {
-  container: {
-    background: "#f5f7fa",
-    minHeight: "100vh",
-    padding: 20,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    marginBottom: 20,
-  },
-  card: {
-    background: "white",
-    padding: 15,
-    borderRadius: 12,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-    width: "100%",
-    maxWidth: 400,
-    marginBottom: 15,
-  },
-  input: {
-    width: "100%",
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 8,
-    border: "1px solid #ddd",
-  },
-  highlight: {
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  smallBtn: {
-    background: "#eee",
-    padding: 8,
-    borderRadius: 8,
-    border: "none",
-    marginBottom: 10,
-  },
-  item: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: 5,
-  },
-  actions: {
-    display: "flex",
-    gap: 10,
-    marginTop: 10,
-  },
-  save: {
-    flex: 1,
-    background: "#0070f3",
-    color: "white",
-    border: "none",
-    padding: 10,
-    borderRadius: 8,
-  },
-  pdf: {
-    flex: 1,
-    background: "green",
-    color: "white",
-    border: "none",
-    padding: 10,
-    borderRadius: 8,
-  },
-  toggle: {
-    margin: 10,
-    padding: 10,
-    borderRadius: 8,
-    border: "none",
-  },
-  edit: {
-    flex: 1,
-    background: "#ffa500",
-    border: "none",
-    padding: 10,
-    borderRadius: 8,
-  },
-  archive: {
-    flex: 1,
-    background: "#999",
-    border: "none",
-    padding: 10,
-    borderRadius: 8,
-  },
+  container: { background:"#f5f7fa", minHeight:"100vh", padding:20 },
+  title: { fontSize:28, marginBottom:20 },
+  card: { background:"white", padding:15, borderRadius:12, marginBottom:15 },
+  input: { width:"100%", padding:10, marginBottom:10 },
+  highlight: { fontWeight:"bold" },
+  smallBtn: { marginBottom:10 },
+  item: { display:"flex", justifyContent:"space-between" },
+  actions: { display:"flex", gap:10 },
+  save: { flex:1, background:"#0070f3", color:"white" },
+  pdf: { flex:1, background:"green", color:"white" },
+  toggle: { marginBottom:10 },
+  edit: { flex:1, background:"orange" },
+  archive: { flex:1, background:"gray" },
 };
