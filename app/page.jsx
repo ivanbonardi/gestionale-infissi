@@ -10,6 +10,7 @@ const supabase = createClient(
 
 export default function Home() {
   const [cliente, setCliente] = useState("");
+  const [indirizzo, setIndirizzo] = useState("");
   const [lavoro, setLavoro] = useState("");
   const [ore, setOre] = useState("");
   const [operai, setOperai] = useState("");
@@ -48,6 +49,7 @@ export default function Home() {
 
   const caricaIntervento = (r) => {
     setCliente(r.cliente || "");
+    setIndirizzo(r.indirizzo || "");
     setLavoro(r.lavoro || "");
     setOre(r.ore || "");
     setOperai(r.operai || "");
@@ -63,6 +65,7 @@ export default function Home() {
         .from("rapportini")
         .update({
           cliente,
+          indirizzo,
           lavoro,
           ore,
           operai,
@@ -74,6 +77,7 @@ export default function Home() {
       query = supabase.from("rapportini").insert([
         {
           cliente,
+          indirizzo,
           lavoro,
           ore,
           operai,
@@ -86,15 +90,19 @@ export default function Home() {
 
     const { error } = await query;
 
-    if (error) alert(error.message);
-    else {
+    if (error) {
+      alert(error.message);
+    } else {
       alert("Salvato!");
+
       setCliente("");
+      setIndirizzo("");
       setLavoro("");
       setOre("");
       setOperai("");
       setArticoli([]);
       setIdModifica(null);
+
       caricaStorico();
     }
   };
@@ -110,12 +118,14 @@ export default function Home() {
 
   const generaPDF = () => {
     const doc = new jsPDF();
+
     doc.text("Rapportino lavoro", 20, 20);
     doc.text(`Cliente: ${cliente}`, 20, 30);
-    doc.text(`Lavoro: ${lavoro}`, 20, 40);
-    doc.text(`Ore uomo: ${oreUomo}`, 20, 50);
+    doc.text(`Indirizzo: ${indirizzo}`, 20, 40);
+    doc.text(`Lavoro: ${lavoro}`, 20, 50);
+    doc.text(`Ore uomo: ${oreUomo}`, 20, 60);
 
-    let y = 60;
+    let y = 70;
     articoli.forEach((a) => {
       doc.text(`- ${a}`, 20, y);
       y += 10;
@@ -130,6 +140,9 @@ export default function Home() {
 
       <div style={styles.card}>
         <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
+        
+        <input style={styles.input} placeholder="Indirizzo cliente" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
+
         <input style={styles.input} placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
 
         <div style={{display:"flex", gap:10}}>
@@ -167,6 +180,7 @@ export default function Home() {
         .map((r,i)=>(
           <div key={i} style={styles.card}>
             <b>{r.cliente}</b>
+            <p>{r.indirizzo}</p>
             <p>{r.lavoro}</p>
             <p>Ore uomo: {r.ore_uomo}</p>
 
