@@ -3,7 +3,6 @@ import jsPDF from "jspdf";
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// 🔴 INSERISCI QUI I TUOI DATI
 const supabase = createClient(
   "https://fenymltejrxvbtfmahsb.supabase.co",
   "sb_publishable_HGSNVbXgM0fZ-jJUYHLfig_Z_9MyeKh"
@@ -19,6 +18,8 @@ export default function Home() {
   const [articoli, setArticoli] = useState([]);
   const [storico, setStorico] = useState([]);
   const [filtroCliente, setFiltroCliente] = useState("");
+  const [idModifica, setIdModifica] = useState(null);
+  const [mostraArchivio, setMostraArchivio] = useState(false);
 
   const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
 
@@ -45,31 +46,73 @@ export default function Home() {
     setArticoli(articoli.filter((_, i) => i !== index));
   };
 
+  const caricaIntervento = (r) => {
+    setCliente(r.cliente || "");
+    setIndirizzo(r.indirizzo || "");
+    setLavoro(r.lavoro || "");
+    setOre(r.ore || "");
+    setOperai(r.operai || "");
+    setArticoli(r.materiali || []);
+    setIdModifica(r.id);
+  };
+
   const salva = async () => {
-    const { error } = await supabase.from("rapportini").insert([
-      {
-        cliente,
-        indirizzo,
-        lavoro,
-        ore,
-        operai,
-        ore_uomo: oreUomo,
-        materiali: articoli,
-      },
-    ]);
+    let query;
+
+    if (idModifica) {
+      query = supabase
+        .from("rapportini")
+        .update({
+          cliente,
+          indirizzo,
+          lavoro,
+          ore,
+          operai,
+          ore_uomo: oreUomo,
+          materiali: articoli,
+        })
+        .eq("id", idModifica);
+    } else {
+      query = supabase.from("rapportini").insert([
+        {
+          cliente,
+          indirizzo,
+          lavoro,
+          ore,
+          operai,
+          ore_uomo: oreUomo,
+          materiali: articoli,
+          archiviato: false,
+        },
+      ]);
+    }
+
+    const { error } = await query;
 
     if (error) {
       alert(error.message);
     } else {
-      alert("Salvato!");
+      alert(idModifica ? "Modificato!" : "Salvato!");
+
       setCliente("");
       setIndirizzo("");
       setLavoro("");
       setOre("");
       setOperai("");
       setArticoli([]);
+      setIdModifica(null);
+
       caricaStorico();
     }
+  };
+
+  const archivia = async (id) => {
+    await supabase
+      .from("rapportini")
+      .update({ archiviato: true })
+      .eq("id", id);
+
+    caricaStorico();
   };
 
   const generaPDF = () => {
@@ -111,6 +154,10 @@ export default function Home() {
     <div style={{ padding: 20, maxWidth: 400, margin: "auto" }}>
       <h2>Gestione Rapportini</h2>
 
+      {idModifica && (
+        <p style={{ color: "orange" }}>✏️ Stai modificando intervento</p>
+      )}
+
       <input placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
       <input placeholder="Indirizzo" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
       <input placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
@@ -138,7 +185,6 @@ export default function Home() {
 
       <h3>Storico interventi</h3>
 
-      {/* 🔍 FILTRO */}
       <input
         placeholder="Filtra per cliente"
         value={filtroCliente}
@@ -150,16 +196,42 @@ export default function Home() {
         Reset filtro
       </button>
 
-      {/* 📋 LISTA FILTRATA */}
+      <button onClick={() => setMostraArchivio(!mostraArchivio)}>
+        {mostraArchivio ? "Mostra attivi" : "Mostra archivio"}
+      </button>
+
       {storico
         .filter((r) =>
           r.cliente?.toLowerCase().includes(filtroCliente.toLowerCase())
         )
+        .filter((r) => mostraArchivio ? r.archiviato : !r.archiviato)
         .map((r,i)=>(
-          <div key={i} style={{border:"1px solid #ccc", margin:10, padding:10}}>
+          <div
+            key={i}
+            onClick={() => caricaIntervento(r)}
+            style={{
+              border:"1px solid #ccc",
+              margin:10,
+              padding:10,
+              cursor:"pointer",
+              opacity: r.archiviato ? 0.5 : 1
+            }}
+          >
             <b>{r.cliente}</b><br/>
             {r.lavoro}<br/>
             Ore uomo: {r.ore_uomo}
+
+            {!r.archiviato && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  archivia(r.id);
+                }}
+                style={{ marginTop: 5 }}
+              >
+                📦 Archivia
+              </button>
+            )}
           </div>
       ))}
     </div>
