@@ -208,12 +208,10 @@ export default function Home() {
         .map((r,i)=>(
           <div
             key={i}
-            onClick={() => caricaIntervento(r)}
             style={{
               border:"1px solid #ccc",
               margin:10,
               padding:10,
-              cursor:"pointer",
               opacity: r.archiviato ? 0.5 : 1
             }}
           >
@@ -221,13 +219,17 @@ export default function Home() {
             {r.lavoro}<br/>
             Ore uomo: {r.ore_uomo}
 
+            <button
+              onClick={() => caricaIntervento(r)}
+              style={{ marginTop: 5 }}
+            >
+              ✏️ Apri
+            </button>
+
             {!r.archiviato && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  archivia(r.id);
-                }}
-                style={{ marginTop: 5 }}
+                onClick={() => archivia(r.id)}
+                style={{ marginTop: 5, marginLeft: 5 }}
               >
                 📦 Archivia
               </button>
