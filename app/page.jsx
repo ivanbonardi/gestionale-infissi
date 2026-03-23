@@ -3,6 +3,18 @@ import { useState } from "react";
 
 export default function Home() {
   const [nome, setNome] = useState("");
+  const [articoli, setArticoli] = useState([]);
+
+  const aggiungi = () => {
+    if (!nome) return;
+    setArticoli([...articoli, nome]);
+    setNome("");
+  };
+
+  const elimina = (index) => {
+    const nuovi = articoli.filter((_, i) => i !== index);
+    setArticoli(nuovi);
+  };
 
   return (
     <div style={styles.container}>
@@ -16,9 +28,23 @@ export default function Home() {
           onChange={(e) => setNome(e.target.value)}
         />
 
-        <button style={styles.button}>
+        <button style={styles.button} onClick={aggiungi}>
           Aggiungi
         </button>
+      </div>
+
+      <div style={styles.lista}>
+        {articoli.map((item, index) => (
+          <div key={index} style={styles.item}>
+            <span>{item}</span>
+            <button
+              style={styles.delete}
+              onClick={() => elimina(index)}
+            >
+              ❌
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -31,17 +57,16 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
+    paddingTop: "80px",
   },
   title: {
     fontSize: "32px",
     fontWeight: "bold",
     marginBottom: "30px",
-    color: "#1a1a1a",
   },
   card: {
     backgroundColor: "white",
-    padding: "30px",
+    padding: "20px",
     borderRadius: "12px",
     boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
     display: "flex",
@@ -60,6 +85,25 @@ const styles = {
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: "bold",
+  },
+  lista: {
+    marginTop: "30px",
+    width: "300px",
+  },
+  item: {
+    backgroundColor: "white",
+    padding: "10px",
+    marginBottom: "10px",
+    borderRadius: "8px",
+    display: "flex",
+    justifyContent: "space-between",
+    boxShadow: "0 5px 15px rgba(0,0,0,0.05)",
+  },
+  delete: {
+    backgroundColor: "red",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
   },
 };
