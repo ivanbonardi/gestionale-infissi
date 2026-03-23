@@ -18,10 +18,10 @@ export default function Home() {
   const [articolo, setArticolo] = useState("");
   const [articoli, setArticoli] = useState([]);
   const [storico, setStorico] = useState([]);
+  const [filtroCliente, setFiltroCliente] = useState("");
 
   const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
 
-  // 📥 CARICA STORICO
   useEffect(() => {
     caricaStorico();
   }, []);
@@ -35,7 +35,6 @@ export default function Home() {
     setStorico(data || []);
   };
 
-  // ➕ AGGIUNGI MATERIALE
   const aggiungi = () => {
     if (!articolo) return;
     setArticoli([...articoli, articolo]);
@@ -46,7 +45,6 @@ export default function Home() {
     setArticoli(articoli.filter((_, i) => i !== index));
   };
 
-  // 💾 SALVA SU SUPABASE
   const salva = async () => {
     const { error } = await supabase.from("rapportini").insert([
       {
@@ -61,7 +59,7 @@ export default function Home() {
     ]);
 
     if (error) {
-  alert(error.message);
+      alert(error.message);
     } else {
       alert("Salvato!");
       setCliente("");
@@ -74,7 +72,6 @@ export default function Home() {
     }
   };
 
-  // 📄 PDF
   const generaPDF = () => {
     const doc = new jsPDF();
 
@@ -141,12 +138,29 @@ export default function Home() {
 
       <h3>Storico interventi</h3>
 
-      {storico.map((r,i)=>(
-        <div key={i} style={{border:"1px solid #ccc", margin:10, padding:10}}>
-          <b>{r.cliente}</b><br/>
-          {r.lavoro}<br/>
-          Ore uomo: {r.ore_uomo}
-        </div>
+      {/* 🔍 FILTRO */}
+      <input
+        placeholder="Filtra per cliente"
+        value={filtroCliente}
+        onChange={(e) => setFiltroCliente(e.target.value)}
+        style={{ marginBottom: 10, padding: 5 }}
+      />
+
+      <button onClick={() => setFiltroCliente("")}>
+        Reset filtro
+      </button>
+
+      {/* 📋 LISTA FILTRATA */}
+      {storico
+        .filter((r) =>
+          r.cliente?.toLowerCase().includes(filtroCliente.toLowerCase())
+        )
+        .map((r,i)=>(
+          <div key={i} style={{border:"1px solid #ccc", margin:10, padding:10}}>
+            <b>{r.cliente}</b><br/>
+            {r.lavoro}<br/>
+            Ore uomo: {r.ore_uomo}
+          </div>
       ))}
     </div>
   );
