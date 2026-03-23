@@ -61,7 +61,7 @@ export default function Home() {
     ]);
 
     if (error) {
-      alert("Errore salvataggio");
+  alert(error.message);
     } else {
       alert("Salvato!");
       setCliente("");
