@@ -48,26 +48,33 @@ export default function Home() {
   };
 
   // 🔥 FIX DEFINITIVO CRASH
-  const caricaIntervento = (r) => {
-    setCliente(r.cliente || "");
-    setIndirizzo(r.indirizzo || "");
-    setLavoro(r.lavoro || "");
-    setOre(r.ore || "");
-    setOperai(r.operai || "");
 
-    if (Array.isArray(r.materiali)) {
-      setArticoli(r.materiali);
-    } else {
-      setArticoli([]);
-    }
-
-    setIdModifica(r.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const salva = async () => {
     let query;
+    const caricaIntervento = (r) => {
+  setCliente(r.cliente || "");
+  setIndirizzo(r.indirizzo || "");
+  setLavoro(r.lavoro || "");
+  setOre(r.ore || "");
+  setOperai(r.operai || "");
 
+  // 🔥 FIX COMPLETO MATERIALI
+  if (Array.isArray(r.materiali)) {
+    setArticoli(r.materiali);
+  } else if (typeof r.materiali === "string") {
+    try {
+      setArticoli(JSON.parse(r.materiali));
+    } catch {
+      setArticoli([]);
+    }
+  } else {
+    setArticoli([]);
+  }
+
+  setIdModifica(r.id);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
     if (idModifica !== null) {
       query = supabase
         .from("rapportini")
