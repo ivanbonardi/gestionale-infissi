@@ -136,11 +136,16 @@ export default function Home() {
   const generaPDF = () => {
     const doc = new jsPDF();
 
-    doc.text("Rapportino lavoro", 20, 20);
-    doc.text(`Cliente: ${cliente}`, 20, 30);
-    doc.text(`Indirizzo: ${indirizzo}`, 20, 40);
-    doc.text(`Lavoro: ${lavoro}`, 20, 50);
-    doc.text(`Ore uomo: ${oreUomo}`, 20, 60);
+doc.setFontSize(18);
+doc.text("RAPPORTINO DI LAVORO", 20, 20);
+
+doc.setFontSize(12);
+doc.text(`Cliente: ${cliente}`, 20, 40);
+doc.text(`Indirizzo: ${indirizzo}`, 20, 50);
+doc.text(`Lavoro: ${lavoro}`, 20, 60);
+
+doc.setFontSize(14);
+doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
 
     let y = 70;
     (articoli || []).forEach((a) => {
