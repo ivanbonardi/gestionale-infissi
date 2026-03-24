@@ -21,6 +21,7 @@ export default function Home() {
   const [storico, setStorico] = useState([]);
   const [idModifica, setIdModifica] = useState(null);
   const [mostraArchivio, setMostraArchivio] = useState(false);
+  const [search, setSearch] = useState("");
 
   const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
 
@@ -47,7 +48,6 @@ export default function Home() {
     setArticoli(articoli.filter((_, index) => index !== i));
   };
 
-  // 🔥 FIX CARICAMENTO MATERIALI
   const caricaIntervento = (r) => {
     setCliente(r.cliente || "");
     setIndirizzo(r.indirizzo || "");
@@ -57,12 +57,6 @@ export default function Home() {
 
     if (Array.isArray(r.materiali)) {
       setArticoli(r.materiali);
-    } else if (typeof r.materiali === "string") {
-      try {
-        setArticoli(JSON.parse(r.materiali));
-      } catch {
-        setArticoli([]);
-      }
     } else {
       setArticoli([]);
     }
@@ -71,9 +65,13 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // 🔥 FIX SALVATAGGIO MATERIALI
   const salva = async () => {
-    const materialiPuliti = articoli && articoli.length ? articoli : [];
+    if (!cliente || !lavoro) {
+      alert("Compila almeno cliente e lavoro");
+      return;
+    }
+
+    const materialiPuliti = articoli.length ? articoli : [];
 
     let query;
 
@@ -101,6 +99,7 @@ export default function Home() {
           ore_uomo: oreUomo,
           materiali: materialiPuliti,
           archiviato: false,
+          data: new Date().toISOString(),
         },
       ]);
     }
@@ -133,22 +132,31 @@ export default function Home() {
     caricaStorico();
   };
 
+  const ripristina = async (id) => {
+    await supabase
+      .from("rapportini")
+      .update({ archiviato: false })
+      .eq("id", id);
+
+    caricaStorico();
+  };
+
   const generaPDF = () => {
     const doc = new jsPDF();
 
-doc.setFontSize(18);
-doc.text("RAPPORTINO DI LAVORO", 20, 20);
+    doc.setFontSize(18);
+    doc.text("RAPPORTINO DI LAVORO", 20, 20);
 
-doc.setFontSize(12);
-doc.text(`Cliente: ${cliente}`, 20, 40);
-doc.text(`Indirizzo: ${indirizzo}`, 20, 50);
-doc.text(`Lavoro: ${lavoro}`, 20, 60);
+    doc.setFontSize(12);
+    doc.text(`Cliente: ${cliente}`, 20, 40);
+    doc.text(`Indirizzo: ${indirizzo}`, 20, 50);
+    doc.text(`Lavoro: ${lavoro}`, 20, 60);
 
-doc.setFontSize(14);
-doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
+    doc.setFontSize(14);
+    doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
 
-    let y = 70;
-    (articoli || []).forEach((a) => {
+    let y = 90;
+    articoli.forEach((a) => {
       doc.text(`- ${a}`, 20, y);
       y += 10;
     });
@@ -160,9 +168,12 @@ doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
     <div style={styles.container}>
       <h1 style={styles.title}>Gestione Rapportini</h1>
 
-      {idModifica !== null && (
-        <p style={{ color: "orange" }}>✏️ Modalità modifica</p>
-      )}
+      <input
+        style={styles.input}
+        placeholder="Cerca cliente..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
       <div style={styles.card}>
         <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
@@ -182,7 +193,7 @@ doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
           + Aggiungi materiale
         </button>
 
-        {(articoli || []).map((a,i)=>(
+        {articoli.map((a,i)=>(
           <div key={i} style={styles.item}>
             {a}
             <button onClick={()=>eliminaMateriale(i)}>❌</button>
@@ -200,19 +211,23 @@ doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
       </button>
 
       {storico
-        .filter((r) => mostraArchivio ? r.archiviato : !r.archiviato)
+        .filter((r) => (mostraArchivio ? r.archiviato : !r.archiviato))
+        .filter((r) => r.cliente.toLowerCase().includes(search.toLowerCase()))
         .map((r)=>(
           <div key={r.id} style={styles.card}>
             <b>{r.cliente}</b>
             <p>{r.indirizzo}</p>
             <p>{r.lavoro}</p>
+            <p>{new Date(r.created_at).toLocaleDateString()}</p>
             <p>Ore uomo: {r.ore_uomo}</p>
 
             <div style={styles.actions}>
               <button style={styles.edit} onClick={()=>caricaIntervento(r)}>✏️</button>
 
-              {!r.archiviato && (
+              {!r.archiviato ? (
                 <button style={styles.archive} onClick={()=>archivia(r.id)}>📦</button>
+              ) : (
+                <button style={styles.save} onClick={()=>ripristina(r.id)}>♻️</button>
               )}
             </div>
           </div>
@@ -222,123 +237,17 @@ doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
 }
 
 const styles = {
-  container: {
-    background: "#f2f2f7",
-    minHeight: "100vh",
-    padding: 15,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 15,
-  },
-
-  card: {
-    background: "#ffffff",
-    padding: 15,
-    borderRadius: 16,
-    marginBottom: 15,
-    width: "100%",
-    maxWidth: 420,
-    boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
-  },
-
-  input: {
-    width: "100%",
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 10,
-    border: "1px solid #e5e5ea",
-    fontSize: 16,
-    outline: "none",
-    background: "#fafafa",
-  },
-
-  highlight: {
-    fontWeight: "600",
-    marginBottom: 10,
-    color: "#333",
-  },
-
-  smallBtn: {
-    width: "100%",
-    padding: 10,
-    borderRadius: 10,
-    border: "none",
-    background: "#e5e5ea",
-    fontSize: 14,
-    marginBottom: 10,
-  },
-
-  item: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 10,
-    background: "#f9f9f9",
-    marginBottom: 5,
-    fontSize: 14,
-  },
-
-  actions: {
-    display: "flex",
-    gap: 10,
-    marginTop: 10,
-  },
-
-  save: {
-    flex: 1,
-    background: "#007aff",
-    color: "white",
-    border: "none",
-    padding: 12,
-    borderRadius: 12,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  pdf: {
-    flex: 1,
-    background: "#34c759",
-    color: "white",
-    border: "none",
-    padding: 12,
-    borderRadius: 12,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  toggle: {
-    width: "100%",
-    maxWidth: 420,
-    padding: 10,
-    borderRadius: 12,
-    border: "none",
-    background: "#e5e5ea",
-    marginBottom: 10,
-    fontSize: 14,
-  },
-
-  edit: {
-    flex: 1,
-    background: "#ff9500",
-    border: "none",
-    padding: 10,
-    borderRadius: 10,
-    color: "white",
-  },
-
-  archive: {
-    flex: 1,
-    background: "#8e8e93",
-    border: "none",
-    padding: 10,
-    borderRadius: 10,
-    color: "white",
-  },
+  container: { background: "#f2f2f7", minHeight: "100vh", padding: 15, display: "flex", flexDirection: "column", alignItems: "center" },
+  title: { fontSize: 24, fontWeight: "600", marginBottom: 15 },
+  card: { background: "#ffffff", padding: 15, borderRadius: 16, marginBottom: 15, width: "100%", maxWidth: 420, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" },
+  input: { width: "100%", padding: 12, marginBottom: 10, borderRadius: 10, border: "1px solid #e5e5ea", fontSize: 16 },
+  highlight: { fontWeight: "600", marginBottom: 10 },
+  smallBtn: { width: "100%", padding: 10, borderRadius: 10, border: "none", background: "#e5e5ea", marginBottom: 10 },
+  item: { display: "flex", justifyContent: "space-between", padding: 10, borderRadius: 10, background: "#f9f9f9", marginBottom: 5 },
+  actions: { display: "flex", gap: 10, marginTop: 10 },
+  save: { flex: 1, background: "#007aff", color: "white", border: "none", padding: 12, borderRadius: 12 },
+  pdf: { flex: 1, background: "#34c759", color: "white", border: "none", padding: 12, borderRadius: 12 },
+  toggle: { width: "100%", maxWidth: 420, padding: 10, borderRadius: 12, border: "none", background: "#e5e5ea", marginBottom: 10 },
+  edit: { flex: 1, background: "#ff9500", border: "none", padding: 10, borderRadius: 10, color: "white" },
+  archive: { flex: 1, background: "#8e8e93", border: "none", padding: 10, borderRadius: 10, color: "white" }
 };
