@@ -237,17 +237,74 @@ export default function Home() {
 }
 
 const styles = {
-  container: { background: "#f2f2f7", minHeight: "100vh", padding: 15, display: "flex", flexDirection: "column", alignItems: "center" },
-  title: { fontSize: 24, fontWeight: "600", marginBottom: 15 },
-  card: { background: "#ffffff", padding: 15, borderRadius: 16, marginBottom: 15, width: "100%", maxWidth: 420, boxShadow: "0 4px 15px rgba(0,0,0,0.05)" },
-  input: { width: "100%", padding: 12, marginBottom: 10, borderRadius: 10, border: "1px solid #e5e5ea", fontSize: 16 },
-  highlight: { fontWeight: "600", marginBottom: 10 },
-  smallBtn: { width: "100%", padding: 10, borderRadius: 10, border: "none", background: "#e5e5ea", marginBottom: 10 },
-  item: { display: "flex", justifyContent: "space-between", padding: 10, borderRadius: 10, background: "#f9f9f9", marginBottom: 5 },
-  actions: { display: "flex", gap: 10, marginTop: 10 },
-  save: { flex: 1, background: "#007aff", color: "white", border: "none", padding: 12, borderRadius: 12 },
-  pdf: { flex: 1, background: "#34c759", color: "white", border: "none", padding: 12, borderRadius: 12 },
-  toggle: { width: "100%", maxWidth: 420, padding: 10, borderRadius: 12, border: "none", background: "#e5e5ea", marginBottom: 10 },
-  edit: { flex: 1, background: "#ff9500", border: "none", padding: 10, borderRadius: 10, color: "white" },
-  archive: { flex: 1, background: "#8e8e93", border: "none", padding: 10, borderRadius: 10, color: "white" }
+  container: {
+    padding: 16,
+    maxWidth: 420,
+    margin: "auto",
+    fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+    backgroundColor: "#f2f2f7",
+    minHeight: "100vh"
+  },
+
+  title: {
+    fontSize: 26,
+    fontWeight: "600",
+    marginBottom: 20
+  },
+
+  input: {
+    width: "100%",
+    padding: 14,
+    marginBottom: 10,
+    borderRadius: 12,
+    border: "none",
+    backgroundColor: "white",
+    fontSize: 16
+  },
+
+  btn: {
+    width: "100%",
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#007AFF",
+    color: "white",
+    border: "none",
+    fontSize: 16,
+    marginBottom: 10
+  },
+
+  save: {
+    width: "100%",
+    padding: 16,
+    borderRadius: 14,
+    backgroundColor: "#34C759",
+    color: "white",
+    border: "none",
+    fontSize: 18,
+    fontWeight: "600"
+  },
+
+  pdf: {
+    width: "100%",
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#5856D6",
+    color: "white",
+    border: "none",
+    fontSize: 16,
+    marginTop: 10
+  },
+
+  row: {
+    display: "flex",
+    gap: 10
+  },
+
+  card: {
+    backgroundColor: "white",
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 10,
+    boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
+  }
 };
