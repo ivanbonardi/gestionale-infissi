@@ -33,12 +33,16 @@ export default function Home() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session) carica(data.session.user.id);
+      if (data.session) {
+        carica(data.session.user.id, data.session.user.email);
+      }
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) carica(session.user.id);
+      if (session) {
+        carica(session.user.id, session.user.email);
+      }
     });
   }, []);
 
@@ -55,15 +59,20 @@ export default function Home() {
     setSession(null);
   };
 
-  // 📥 CARICA DATI
-  const carica = async (userId) => {
-    const { data } = await supabase
+  // 📥 CARICA DATI (ADMIN + OPERAI)
+  const carica = async (userId, email) => {
+    let query = supabase
       .from("rapportini")
       .select("*")
-      .eq("user_id", userId)
       .eq("archiviato", false)
       .order("created_at", { ascending: false });
 
+    // 👑 SOLO ADMIN VEDE TUTTO
+    if (email !== "admin@carlini.it") {
+      query = query.eq("user_id", userId);
+    }
+
+    const { data } = await query;
     setStorico(data || []);
   };
 
@@ -102,7 +111,7 @@ export default function Home() {
     }
 
     reset();
-    carica(user.id);
+    carica(user.id, user.email);
   };
 
   const modifica = (r) => {
@@ -118,7 +127,7 @@ export default function Home() {
   const archivia = async (id) => {
     await supabase.from("rapportini").update({ archiviato: true }).eq("id", id);
     const user = (await supabase.auth.getUser()).data.user;
-    carica(user.id);
+    carica(user.id, user.email);
   };
 
   const reset = () => {
@@ -208,7 +217,7 @@ export default function Home() {
           {r.indirizzo}<br/>
           Ore uomo: {r.ore_uomo}
 
-          <div>
+          <div style={{marginTop:10}}>
             <button onClick={()=>modifica(r)}>✏️</button>
             <button onClick={()=>archivia(r.id)}>📦</button>
           </div>
