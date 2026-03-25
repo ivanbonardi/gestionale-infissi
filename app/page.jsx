@@ -222,29 +222,54 @@ export default function Home() {
 
       <input style={styles.input} placeholder="Filtro cliente" value={filtro} onChange={(e)=>setFiltro(e.target.value)} />
 
-      {filtrati.map((r)=>(
-        <div key={r.id} style={styles.card}>
-          <b>{r.cliente}</b><br/>
-          {r.indirizzo}<br/>
-          Ore uomo: {r.ore_uomo}
+{filtrati.map((r)=>(
+  <div
+    key={r.id}
+    style={{
+      ...styles.card,
+      background: r.archiviato ? "#e5e5ea" : "white",
+      opacity: r.archiviato ? 0.8 : 1
+    }}
+  >
+    <b>{r.cliente}</b>
 
-          <div style={{marginTop:10}}>
-           <div style={{marginTop:10}}>
+    {r.archiviato && (
+      <span style={{
+        marginLeft:10,
+        fontSize:12,
+        color:"#666"
+      }}>
+        📦 ARCHIVIATO
+      </span>
+    )}
 
-  {/* ✏️ MODIFICA SEMPRE */}
-  <button onClick={()=>modifica(r)}>✏️</button>
+    <br/>
+    {r.indirizzo}<br/>
+    Ore uomo: {r.ore_uomo}
 
-  {!mostraArchivio && (
-    <button onClick={()=>archivia(r.id)}>📦</button>
-  )}
+    <div style={{marginTop:10, display:"flex", gap:10}}>
 
-  {mostraArchivio && (
-    <button onClick={()=>eliminaDefinitivo(r.id)}>🗑</button>
-  )}
+      {/* ✏️ MODIFICA SEMPRE */}
+      <button onClick={()=>modifica(r)}>✏️</button>
 
-          </div>
-        </div>
-      ))}
+      {/* 📦 ARCHIVIA */}
+      {!r.archiviato && (
+        <button onClick={()=>archivia(r.id)}>📦</button>
+      )}
+
+      {/* 🔁 RIPRISTINA */}
+      {r.archiviato && (
+        <button onClick={()=>ripristina(r.id)}>🔁</button>
+      )}
+
+      {/* 🗑 ELIMINA */}
+      {r.archiviato && (
+        <button onClick={()=>eliminaDefinitivo(r.id)}>🗑</button>
+      )}
+
+    </div>
+  </div>
+))}
     </div>
   );
 }
