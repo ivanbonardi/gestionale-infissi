@@ -201,8 +201,13 @@ export default function Home() {
         ))}
 
         <div style={styles.actions}>
-          <button style={styles.save} onClick={salva}>💾 Salva</button>
-          <button style={styles.pdf} onClick={generaPDF}>📄 PDF</button>
+         <button style={styles.save} onClick={salva}>
+  💾 Salva intervento
+</button>
+
+<button style={styles.pdf} onClick={generaPDF}>
+  📄 Genera PDF
+</button>
         </div>
       </div>
 
