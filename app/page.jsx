@@ -21,6 +21,7 @@ export default function Home() {
   const [lavoro, setLavoro] = useState("");
   const [ore, setOre] = useState("");
   const [operai, setOperai] = useState("");
+  const [data, setData] = useState("");
   const [articolo, setArticolo] = useState("");
   const [articoli, setArticoli] = useState([]);
   const [storico, setStorico] = useState([]);
@@ -101,6 +102,8 @@ export default function Home() {
       ore_uomo: oreUomo,
       materiali: articoli || [],
       user_id: user.id,
+      nome_operatore: user.email,
+      data: data || new Date().toISOString().split("T")[0],
     };
 
     if (editId) {
@@ -122,6 +125,7 @@ export default function Home() {
     setOre(r.ore);
     setOperai(r.operai);
     setArticoli(r.materiali || []);
+    setData(r.data || "");
     setEditId(r.id);
   };
 
@@ -130,12 +134,13 @@ export default function Home() {
     const user = (await supabase.auth.getUser()).data.user;
     carica(user.id, user.email);
   };
-const ripristina = async (id) => {
-  await supabase.from("rapportini").update({ archiviato: false }).eq("id", id);
 
-  const user = (await supabase.auth.getUser()).data.user;
-  carica(user.id, user.email);
-};
+  const ripristina = async (id) => {
+    await supabase.from("rapportini").update({ archiviato: false }).eq("id", id);
+    const user = (await supabase.auth.getUser()).data.user;
+    carica(user.id, user.email);
+  };
+
   const eliminaDefinitivo = async (id) => {
     await supabase.from("rapportini").delete().eq("id", id);
     const user = (await supabase.auth.getUser()).data.user;
@@ -149,6 +154,7 @@ const ripristina = async (id) => {
     setOre("");
     setOperai("");
     setArticoli([]);
+    setData("");
     setEditId(null);
   };
 
@@ -160,12 +166,14 @@ const ripristina = async (id) => {
     doc.text("Rapportino intervento", 105, 20, null, null, "center");
 
     doc.setFontSize(11);
-    doc.text(`Cliente: ${cliente}`, 10, 40);
-    doc.text(`Indirizzo: ${indirizzo}`, 10, 50);
-    doc.text(`Lavoro: ${lavoro}`, 10, 60);
-    doc.text(`Ore uomo: ${oreUomo}`, 10, 70);
+    doc.text(`Data: ${data}`, 10, 30);
+    doc.text(`Operatore: ${session?.user?.email}`, 10, 40);
+    doc.text(`Cliente: ${cliente}`, 10, 50);
+    doc.text(`Indirizzo: ${indirizzo}`, 10, 60);
+    doc.text(`Lavoro: ${lavoro}`, 10, 70);
+    doc.text(`Ore uomo: ${oreUomo}`, 10, 80);
 
-    let y = 80;
+    let y = 90;
     articoli.forEach((a) => {
       doc.text(`- ${a}`, 10, y);
       y += 10;
@@ -199,8 +207,10 @@ const ripristina = async (id) => {
       <button style={styles.logout} onClick={logout}>Logout</button>
 
       <button style={styles.btn} onClick={() => setMostraArchivio(!mostraArchivio)}>
-        {mostraArchivio ? "📂 Vedi attivi" : "📦 Vedi archivio"}
+        {mostraArchivio ? "📂 Attivi" : "📦 Archivio"}
       </button>
+
+      <input style={styles.input} type="date" value={data} onChange={(e)=>setData(e.target.value)} />
 
       <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
       <input style={styles.input} placeholder="Indirizzo" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
@@ -227,54 +237,36 @@ const ripristina = async (id) => {
 
       <input style={styles.input} placeholder="Filtro cliente" value={filtro} onChange={(e)=>setFiltro(e.target.value)} />
 
-{filtrati.map((r)=>(
-  <div
-    key={r.id}
-    style={{
-      ...styles.card,
-      background: r.archiviato ? "#e5e5ea" : "white",
-      opacity: r.archiviato ? 0.8 : 1
-    }}
-  >
-    <b>{r.cliente}</b>
+      {filtrati.map((r)=>(
+        <div
+          key={r.id}
+          style={{
+            ...styles.card,
+            background: r.archiviato ? "#e5e5ea" : "white"
+          }}
+        >
+          <b>{r.data}</b><br/>
+          👷 {r.nome_operatore}<br/>
+          <b>{r.cliente}</b><br/>
+          {r.indirizzo}<br/>
+          Ore uomo: {r.ore_uomo}
 
-    {r.archiviato && (
-      <span style={{
-        marginLeft:10,
-        fontSize:12,
-        color:"#666"
-      }}>
-        📦 ARCHIVIATO
-      </span>
-    )}
+          <div style={{marginTop:10, display:"flex", gap:10}}>
+            <button onClick={()=>modifica(r)}>✏️</button>
 
-    <br/>
-    {r.indirizzo}<br/>
-    Ore uomo: {r.ore_uomo}
+            {!r.archiviato && (
+              <button onClick={()=>archivia(r.id)}>📦</button>
+            )}
 
-    <div style={{marginTop:10, display:"flex", gap:10}}>
-
-      {/* ✏️ MODIFICA SEMPRE */}
-      <button onClick={()=>modifica(r)}>✏️</button>
-
-      {/* 📦 ARCHIVIA */}
-      {!r.archiviato && (
-        <button onClick={()=>archivia(r.id)}>📦</button>
-      )}
-
-      {/* 🔁 RIPRISTINA */}
-      {r.archiviato && (
-        <button onClick={()=>ripristina(r.id)}>🔁</button>
-      )}
-
-      {/* 🗑 ELIMINA */}
-      {r.archiviato && (
-        <button onClick={()=>eliminaDefinitivo(r.id)}>🗑</button>
-      )}
-
-    </div>
-  </div>
-))}
+            {r.archiviato && (
+              <>
+                <button onClick={()=>ripristina(r.id)}>🔁</button>
+                <button onClick={()=>eliminaDefinitivo(r.id)}>🗑</button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -289,5 +281,5 @@ const styles = {
   pdf: { width:"100%", padding:14, borderRadius:12, background:"#5856D6", color:"white", border:"none", marginTop:10 },
   logout: { marginBottom:10, background:"red", color:"white", border:"none", padding:10, borderRadius:8 },
   row: { display:"flex", gap:10 },
-  card: { background:"white", padding:14, borderRadius:14, marginTop:10 }
+  card: { padding:14, borderRadius:14, marginTop:10 }
 };
