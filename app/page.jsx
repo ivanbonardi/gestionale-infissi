@@ -1,7 +1,7 @@
 "use client";
+import jsPDF from "jspdf";
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import jsPDF from "jspdf";
 
 const supabase = createClient(
   "https://fenymltejrxvbtfmahsb.supabase.co",
@@ -9,307 +9,224 @@ const supabase = createClient(
 );
 
 export default function Home() {
+
+  // 🔐 LOGIN
+  const [session, setSession] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // 📋 DATI
   const [cliente, setCliente] = useState("");
   const [indirizzo, setIndirizzo] = useState("");
   const [lavoro, setLavoro] = useState("");
   const [ore, setOre] = useState("");
   const [operai, setOperai] = useState("");
-
   const [articolo, setArticolo] = useState("");
   const [articoli, setArticoli] = useState([]);
-
   const [storico, setStorico] = useState([]);
-  const [idModifica, setIdModifica] = useState(null);
-  const [mostraArchivio, setMostraArchivio] = useState(false);
-  const [search, setSearch] = useState("");
+  const [filtro, setFiltro] = useState("");
+  const [editId, setEditId] = useState(null);
 
   const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
 
+  // 🔐 SESSIONE
   useEffect(() => {
-    caricaStorico();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      if (data.session) carica(data.session.user.id);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) carica(session.user.id);
+    });
   }, []);
 
-  const caricaStorico = async () => {
+  const login = async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) alert(error.message);
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+  };
+
+  // 📥 CARICA DATI
+  const carica = async (userId) => {
     const { data } = await supabase
       .from("rapportini")
       .select("*")
+      .eq("user_id", userId)
+      .eq("archiviato", false)
       .order("created_at", { ascending: false });
 
     setStorico(data || []);
   };
 
-  const aggiungiMateriale = () => {
+  // ➕ MATERIALI
+  const aggiungi = () => {
     if (!articolo) return;
     setArticoli([...articoli, articolo]);
     setArticolo("");
   };
 
-  const eliminaMateriale = (i) => {
+  const elimina = (i) => {
     setArticoli(articoli.filter((_, index) => index !== i));
   };
 
-  const caricaIntervento = (r) => {
-    setCliente(r.cliente || "");
-    setIndirizzo(r.indirizzo || "");
-    setLavoro(r.lavoro || "");
-    setOre(r.ore || "");
-    setOperai(r.operai || "");
+  // 💾 SALVA / MODIFICA
+  const salva = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
 
-    if (Array.isArray(r.materiali)) {
-      setArticoli(r.materiali);
+    const dati = {
+      cliente,
+      indirizzo,
+      lavoro,
+      ore,
+      operai,
+      ore_uomo: oreUomo,
+      materiali: articoli && articoli.length ? articoli : [],
+      user_id: user.id,
+    };
+
+    if (editId) {
+      await supabase.from("rapportini").update(dati).eq("id", editId);
+      alert("Modificato!");
     } else {
-      setArticoli([]);
+      await supabase.from("rapportini").insert([dati]);
+      alert("Salvato!");
     }
 
-    setIdModifica(r.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    reset();
+    carica(user.id);
   };
 
-  const salva = async () => {
-    if (!cliente || !lavoro) {
-      alert("Compila almeno cliente e lavoro");
-      return;
-    }
-
-    const materialiPuliti = articoli.length ? articoli : [];
-
-    let query;
-
-    if (idModifica !== null) {
-      query = supabase
-        .from("rapportini")
-        .update({
-          cliente,
-          indirizzo,
-          lavoro,
-          ore,
-          operai,
-          ore_uomo: oreUomo,
-          materiali: materialiPuliti,
-        })
-        .eq("id", idModifica);
-    } else {
-      query = supabase.from("rapportini").insert([
-        {
-          cliente,
-          indirizzo,
-          lavoro,
-          ore,
-          operai,
-          ore_uomo: oreUomo,
-          materiali: materialiPuliti,
-          archiviato: false,
-          data: new Date().toISOString(),
-        },
-      ]);
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      alert(error.message);
-    } else {
-      alert(idModifica ? "Modificato!" : "Salvato!");
-
-      setCliente("");
-      setIndirizzo("");
-      setLavoro("");
-      setOre("");
-      setOperai("");
-      setArticoli([]);
-      setIdModifica(null);
-
-      caricaStorico();
-    }
+  const modifica = (r) => {
+    setCliente(r.cliente);
+    setIndirizzo(r.indirizzo);
+    setLavoro(r.lavoro);
+    setOre(r.ore);
+    setOperai(r.operai);
+    setArticoli(r.materiali || []);
+    setEditId(r.id);
   };
 
   const archivia = async (id) => {
-    await supabase
-      .from("rapportini")
-      .update({ archiviato: true })
-      .eq("id", id);
-
-    caricaStorico();
+    await supabase.from("rapportini").update({ archiviato: true }).eq("id", id);
+    const user = (await supabase.auth.getUser()).data.user;
+    carica(user.id);
   };
 
-  const ripristina = async (id) => {
-    await supabase
-      .from("rapportini")
-      .update({ archiviato: false })
-      .eq("id", id);
-
-    caricaStorico();
+  const reset = () => {
+    setCliente("");
+    setIndirizzo("");
+    setLavoro("");
+    setOre("");
+    setOperai("");
+    setArticoli([]);
+    setEditId(null);
   };
 
+  // 📄 PDF
   const generaPDF = () => {
     const doc = new jsPDF();
 
     doc.setFontSize(18);
-    doc.text("RAPPORTINO DI LAVORO", 20, 20);
+    doc.text("Rapportino intervento", 105, 20, null, null, "center");
 
-    doc.setFontSize(12);
-    doc.text(`Cliente: ${cliente}`, 20, 40);
-    doc.text(`Indirizzo: ${indirizzo}`, 20, 50);
-    doc.text(`Lavoro: ${lavoro}`, 20, 60);
+    doc.setFontSize(11);
+    doc.text(`Cliente: ${cliente}`, 10, 40);
+    doc.text(`Indirizzo: ${indirizzo}`, 10, 50);
+    doc.text(`Lavoro: ${lavoro}`, 10, 60);
+    doc.text(`Ore uomo: ${oreUomo}`, 10, 70);
 
-    doc.setFontSize(14);
-    doc.text(`Ore uomo: ${oreUomo}`, 20, 75);
-
-    let y = 90;
+    let y = 80;
     articoli.forEach((a) => {
-      doc.text(`- ${a}`, 20, y);
+      doc.text(`- ${a}`, 10, y);
       y += 10;
     });
 
     doc.save("rapportino.pdf");
   };
 
+  const filtrati = storico.filter((r) =>
+    r.cliente?.toLowerCase().includes(filtro.toLowerCase())
+  );
+
+  // 🔐 LOGIN UI
+  if (!session) {
+    return (
+      <div style={styles.container}>
+        <h2 style={styles.title}>🔐 Login Operai</h2>
+
+        <input style={styles.input} placeholder="Email" onChange={(e)=>setEmail(e.target.value)} />
+        <input style={styles.input} type="password" placeholder="Password" onChange={(e)=>setPassword(e.target.value)} />
+
+        <button style={styles.btn} onClick={login}>Accedi</button>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Gestione Rapportini</h1>
+      <h1 style={styles.title}>📱 Rapportini Carlini</h1>
 
-      <input
-        style={styles.input}
-        placeholder="Cerca cliente..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <button style={styles.logout} onClick={logout}>Logout</button>
 
-      <div style={styles.card}>
-        <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
-        <input style={styles.input} placeholder="Indirizzo cliente" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
-        <input style={styles.input} placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
+      <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
+      <input style={styles.input} placeholder="Indirizzo" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
+      <input style={styles.input} placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
 
-        <div style={{display:"flex", gap:10}}>
-          <input style={styles.input} placeholder="Ore" value={ore} onChange={(e)=>setOre(e.target.value)} />
-          <input style={styles.input} placeholder="Operai" value={operai} onChange={(e)=>setOperai(e.target.value)} />
-        </div>
-
-        <p style={styles.highlight}>Ore uomo: {oreUomo}</p>
-
-        <input style={styles.input} placeholder="Materiale" value={articolo} onChange={(e)=>setArticolo(e.target.value)} />
-
-        <button style={styles.smallBtn} onClick={aggiungiMateriale}>
-          + Aggiungi materiale
-        </button>
-
-        {articoli.map((a,i)=>(
-          <div key={i} style={styles.item}>
-            {a}
-            <button onClick={()=>eliminaMateriale(i)}>❌</button>
-          </div>
-        ))}
-
-        <div style={styles.actions}>
-         <button style={styles.save} onClick={salva}>
-  💾 Salva intervento
-</button>
-
-<button style={styles.pdf} onClick={generaPDF}>
-  📄 Genera PDF
-</button>
-        </div>
+      <div style={styles.row}>
+        <input style={styles.input} placeholder="Ore" value={ore} onChange={(e)=>setOre(e.target.value)} />
+        <input style={styles.input} placeholder="Operai" value={operai} onChange={(e)=>setOperai(e.target.value)} />
       </div>
 
-      <button style={styles.toggle} onClick={() => setMostraArchivio(!mostraArchivio)}>
-        {mostraArchivio ? "Mostra attivi" : "Mostra archivio"}
-      </button>
+      <p><b>Ore uomo: {oreUomo}</b></p>
 
-      {storico
-        .filter((r) => (mostraArchivio ? r.archiviato : !r.archiviato))
-        .filter((r) => r.cliente.toLowerCase().includes(search.toLowerCase()))
-        .map((r)=>(
-          <div key={r.id} style={styles.card}>
-            <b>{r.cliente}</b>
-            <p>{r.indirizzo}</p>
-            <p>{r.lavoro}</p>
-            <p>{new Date(r.created_at).toLocaleDateString()}</p>
-            <p>Ore uomo: {r.ore_uomo}</p>
+      <input style={styles.input} placeholder="Materiale" value={articolo} onChange={(e)=>setArticolo(e.target.value)} />
+      <button style={styles.btn} onClick={aggiungi}>+ Materiale</button>
 
-            <div style={styles.actions}>
-              <button style={styles.edit} onClick={()=>caricaIntervento(r)}>✏️</button>
+      {articoli.map((a,i)=>(
+        <div key={i}>{a} <button onClick={()=>elimina(i)}>❌</button></div>
+      ))}
 
-              {!r.archiviato ? (
-                <button style={styles.archive} onClick={()=>archivia(r.id)}>📦</button>
-              ) : (
-                <button style={styles.save} onClick={()=>ripristina(r.id)}>♻️</button>
-              )}
-            </div>
+      <button style={styles.save} onClick={salva}>💾 Salva</button>
+      <button style={styles.pdf} onClick={generaPDF}>📄 PDF</button>
+
+      <hr/>
+
+      <input style={styles.input} placeholder="Filtro cliente" value={filtro} onChange={(e)=>setFiltro(e.target.value)} />
+
+      {filtrati.map((r)=>(
+        <div key={r.id} style={styles.card}>
+          <b>{r.cliente}</b><br/>
+          {r.indirizzo}<br/>
+          Ore uomo: {r.ore_uomo}
+
+          <div>
+            <button onClick={()=>modifica(r)}>✏️</button>
+            <button onClick={()=>archivia(r.id)}>📦</button>
           </div>
+        </div>
       ))}
     </div>
   );
 }
 
+// 🎨 STILE APPLE
 const styles = {
-  container: {
-    padding: 16,
-    maxWidth: 420,
-    margin: "auto",
-    fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
-    backgroundColor: "#f2f2f7",
-    minHeight: "100vh"
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: "600",
-    marginBottom: 20
-  },
-
-  input: {
-    width: "100%",
-    padding: 14,
-    marginBottom: 10,
-    borderRadius: 12,
-    border: "none",
-    backgroundColor: "white",
-    fontSize: 16
-  },
-
-  btn: {
-    width: "100%",
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: "#007AFF",
-    color: "white",
-    border: "none",
-    fontSize: 16,
-    marginBottom: 10
-  },
-
-  save: {
-    width: "100%",
-    padding: 16,
-    borderRadius: 14,
-    backgroundColor: "#34C759",
-    color: "white",
-    border: "none",
-    fontSize: 18,
-    fontWeight: "600"
-  },
-
-  pdf: {
-    width: "100%",
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: "#5856D6",
-    color: "white",
-    border: "none",
-    fontSize: 16,
-    marginTop: 10
-  },
-
-  row: {
-    display: "flex",
-    gap: 10
-  },
-
-  card: {
-    backgroundColor: "white",
-    padding: 14,
-    borderRadius: 14,
-    marginTop: 10,
-    boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
-  }
+  container: { padding:16, maxWidth:420, margin:"auto", background:"#f2f2f7", minHeight:"100vh" },
+  title: { fontSize:24, fontWeight:"600", marginBottom:15 },
+  input: { width:"100%", padding:14, marginBottom:10, borderRadius:12, border:"none", background:"white" },
+  btn: { width:"100%", padding:14, borderRadius:12, background:"#007AFF", color:"white", border:"none", marginBottom:10 },
+  save: { width:"100%", padding:16, borderRadius:14, background:"#34C759", color:"white", border:"none", fontWeight:"600" },
+  pdf: { width:"100%", padding:14, borderRadius:12, background:"#5856D6", color:"white", border:"none", marginTop:10 },
+  logout: { marginBottom:10, background:"red", color:"white", border:"none", padding:10, borderRadius:8 },
+  row: { display:"flex", gap:10 },
+  card: { background:"white", padding:14, borderRadius:14, marginTop:10 }
 };
