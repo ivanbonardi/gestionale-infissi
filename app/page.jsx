@@ -130,7 +130,12 @@ export default function Home() {
     const user = (await supabase.auth.getUser()).data.user;
     carica(user.id, user.email);
   };
+const ripristina = async (id) => {
+  await supabase.from("rapportini").update({ archiviato: false }).eq("id", id);
 
+  const user = (await supabase.auth.getUser()).data.user;
+  carica(user.id, user.email);
+};
   const eliminaDefinitivo = async (id) => {
     await supabase.from("rapportini").delete().eq("id", id);
     const user = (await supabase.auth.getUser()).data.user;
