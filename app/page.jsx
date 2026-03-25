@@ -26,6 +26,7 @@ export default function Home() {
   const [storico, setStorico] = useState([]);
   const [filtro, setFiltro] = useState("");
   const [editId, setEditId] = useState(null);
+  const [mostraArchivio, setMostraArchivio] = useState(false);
 
   const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
 
@@ -44,7 +45,7 @@ export default function Home() {
         carica(session.user.id, session.user.email);
       }
     });
-  }, []);
+  }, [mostraArchivio]);
 
   const login = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -59,18 +60,18 @@ export default function Home() {
     setSession(null);
   };
 
-  // 📥 CARICA DATI (ADMIN + OPERAI)
+  // 📥 CARICA DATI
   const carica = async (userId, email) => {
     let query = supabase
       .from("rapportini")
       .select("*")
-      .eq("archiviato", false)
       .order("created_at", { ascending: false });
 
-    // 👑 SOLO ADMIN VEDE TUTTO
     if (email !== "admin@carlini.it") {
       query = query.eq("user_id", userId);
     }
+
+    query = query.eq("archiviato", mostraArchivio);
 
     const { data } = await query;
     setStorico(data || []);
@@ -98,7 +99,7 @@ export default function Home() {
       ore,
       operai,
       ore_uomo: oreUomo,
-      materiali: articoli && articoli.length ? articoli : [],
+      materiali: articoli || [],
       user_id: user.id,
     };
 
@@ -126,6 +127,12 @@ export default function Home() {
 
   const archivia = async (id) => {
     await supabase.from("rapportini").update({ archiviato: true }).eq("id", id);
+    const user = (await supabase.auth.getUser()).data.user;
+    carica(user.id, user.email);
+  };
+
+  const eliminaDefinitivo = async (id) => {
+    await supabase.from("rapportini").delete().eq("id", id);
     const user = (await supabase.auth.getUser()).data.user;
     carica(user.id, user.email);
   };
@@ -186,6 +193,10 @@ export default function Home() {
 
       <button style={styles.logout} onClick={logout}>Logout</button>
 
+      <button style={styles.btn} onClick={() => setMostraArchivio(!mostraArchivio)}>
+        {mostraArchivio ? "📂 Vedi attivi" : "📦 Vedi archivio"}
+      </button>
+
       <input style={styles.input} placeholder="Cliente" value={cliente} onChange={(e)=>setCliente(e.target.value)} />
       <input style={styles.input} placeholder="Indirizzo" value={indirizzo} onChange={(e)=>setIndirizzo(e.target.value)} />
       <input style={styles.input} placeholder="Lavoro" value={lavoro} onChange={(e)=>setLavoro(e.target.value)} />
@@ -218,8 +229,16 @@ export default function Home() {
           Ore uomo: {r.ore_uomo}
 
           <div style={{marginTop:10}}>
-            <button onClick={()=>modifica(r)}>✏️</button>
-            <button onClick={()=>archivia(r.id)}>📦</button>
+            {!mostraArchivio && (
+              <>
+                <button onClick={()=>modifica(r)}>✏️</button>
+                <button onClick={()=>archivia(r.id)}>📦</button>
+              </>
+            )}
+
+            {mostraArchivio && (
+              <button onClick={()=>eliminaDefinitivo(r.id)}>🗑 Elimina</button>
+            )}
           </div>
         </div>
       ))}
