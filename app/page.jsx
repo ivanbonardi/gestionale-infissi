@@ -229,16 +229,19 @@ export default function Home() {
           Ore uomo: {r.ore_uomo}
 
           <div style={{marginTop:10}}>
-            {!mostraArchivio && (
-              <>
-                <button onClick={()=>modifica(r)}>✏️</button>
-                <button onClick={()=>archivia(r.id)}>📦</button>
-              </>
-            )}
+           <div style={{marginTop:10}}>
 
-            {mostraArchivio && (
-              <button onClick={()=>eliminaDefinitivo(r.id)}>🗑 Elimina</button>
-            )}
+  {/* ✏️ MODIFICA SEMPRE */}
+  <button onClick={()=>modifica(r)}>✏️</button>
+
+  {!mostraArchivio && (
+    <button onClick={()=>archivia(r.id)}>📦</button>
+  )}
+
+  {mostraArchivio && (
+    <button onClick={()=>eliminaDefinitivo(r.id)}>🗑</button>
+  )}
+
           </div>
         </div>
       ))}
