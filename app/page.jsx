@@ -30,6 +30,7 @@ export default function Home() {
   const [mostraArchivio, setMostraArchivio] = useState(false);
 
   const oreUomo = (Number(ore) || 0) * (Number(operai) || 0);
+  const oreTotali = Number(ore) || 0;
 
   // 🔐 SESSIONE
   useEffect(() => {
@@ -99,7 +100,7 @@ export default function Home() {
       lavoro,
       ore,
       operai,
-      ore_uomo: oreUomo,
+      ore_totali: oreTotali,
       materiali: articoli || [],
       user_id: user.id,
       nome_operatore: user.email,
