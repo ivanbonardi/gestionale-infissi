@@ -172,7 +172,7 @@ export default function Home() {
     doc.text(`Cliente: ${cliente}`, 10, 50);
     doc.text(`Indirizzo: ${indirizzo}`, 10, 60);
     doc.text(`Lavoro: ${lavoro}`, 10, 70);
-    doc.text(`Ore uomo: ${oreUomo}`, 10, 80);
+    doc.text(`Ore totali: ${oreTotali}`, 10, 80);
 
     let y = 90;
     articoli.forEach((a) => {
@@ -250,7 +250,7 @@ export default function Home() {
           👷 {r.nome_operatore}<br/>
           <b>{r.cliente}</b><br/>
           {r.indirizzo}<br/>
-          Ore uomo: {r.ore_uomo}
+          Ore totali: {r.ore_totali}
 
           <div style={{marginTop:10, display:"flex", gap:10}}>
             <button onClick={()=>modifica(r)}>✏️</button>
